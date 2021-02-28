@@ -1,4 +1,4 @@
-# Memorizing_with_pictures
+# S3upload
 사진으로 암기하는 영어 단어 암기 어플리케이션
 
 먼저 이걸 하기 위해선
