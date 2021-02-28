@@ -25,3 +25,27 @@
 4. "갤러리에서 선택한 사진, 바로 직접 촬영한 사진에 대해 AWS_REKOGNITION 을 해야한다." 이 부분 너무 간단하게 말했지만 이게 문제다. 다시 잘 생각해보자.
 
 5. 내 폰 하나에서만 돌릴 게 아니라, 다른 모든 유저들이 요청한 사진들 각각에 대해서 처리 해줘야 한다. <br> <- 이걸 어떻게 해야 잘 할 수 있을까? 다른 누군가에게 물어보자
+
+
+## 현재 에러 발생 기록
+
+```Java
+
+2021-02-28 19:07:39.085 18502-18502/com.example.etri E/AndroidRuntime: FATAL EXCEPTION: main
+    Process: com.example.etri, PID: 18502
+    java.lang.NullPointerException: Attempt to invoke virtual method 'com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility.upload(java.lang.String, java.lang.String, java.io.File)' on a null object reference
+        at com.example.etri.MainActivity.onClick(MainActivity.java:164)
+        at android.view.View.performClick(View.java:7862)
+        at android.widget.TextView.performClick(TextView.java:15004)
+        at android.view.View.performClickInternal(View.java:7831)
+        at android.view.View.access$3600(View.java:879)
+        at android.view.View$PerformClick.run(View.java:29359)
+        at android.os.Handler.handleCallback(Handler.java:883)
+        at android.os.Handler.dispatchMessage(Handler.java:100)
+        at android.os.Looper.loop(Looper.java:237)
+        at android.app.ActivityThread.main(ActivityThread.java:8167)
+        at java.lang.reflect.Method.invoke(Native Method)
+        at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:496)
+        at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1100)
+
+```
