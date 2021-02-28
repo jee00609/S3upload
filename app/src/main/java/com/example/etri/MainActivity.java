@@ -31,22 +31,30 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Bucket;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     final String TAG = getClass().getSimpleName();
+
+    final String LogTag = "LogTag";
+
     ImageView imageView;
     Button cameraBtn;
     Button uploadBtn;
@@ -73,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         imageView = findViewById(R.id.imageview);
         cameraBtn = findViewById(R.id.camera_button);
 
-        uploadBtn = (Button) findViewById(R.id.uploadBtn);
+        uploadBtn = findViewById(R.id.uploadBtn);
 
         // 카메라 버튼에 리스터 추가
         cameraBtn.setOnClickListener(this);
@@ -94,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Amazon Cognito 인증 공급자를 초기화합니다
         CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(),
-                "자격 증명 풀-언니거 쓰는거", // 자격 증명 풀 ID
+                "자격 증명 풀", // 자격 증명 풀 ID
                 Regions.US_EAST_1 // 리전
         );
 
@@ -104,6 +112,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         System.out.println("확인해보기 1111111111");
 
         TransferUtility transferUtility = new TransferUtility(s3, getApplicationContext());
+
+        //초기화
+        transferUtility.cancel(Integer.MAX_VALUE - 1);
+
+//        /**
+//         * work around for a bug:
+//         * http://stackoverflow.com/questions/36587511/android-amazon-s3-uploading-crash
+//         */
+//        public static void startupTranferServiceEarlyToAvoidBugs(Context context) {
+//            final TransferUtility tu = new TransferUtility(
+//                    new AmazonS3Client((AWSCredentials)null),
+//                    context);
+//            tu.cancel(Integer.MAX_VALUE - 1);
+//        }
 
     }
 
@@ -131,26 +153,70 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.uploadBtn:
-                System.out.println("확인해보기 2222222222222");
 
-                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                String imageFileName = "JPEG_" + timeStamp + ".jpg";
+                uploadPicture();
 
-                System.out.println("확인해보기 2.5 "+imageFileName);
-
-                File f = new File(mCurrentPhotoPath);
-
-                System.out.println("확인해보기 33333333 "+f);
-
-                TransferObserver observer = transferUtility.upload(
-                        "android-rekogntion", /* 업로드 할 버킷 이름 */
-                        imageFileName, /* 버킷에 저장할 파일의 이름 */
-                        f /* 버킷에 저장할 파일 */
-                );
-                System.out.println("확인해보기 444444444");
                 break;
 
         }
+    }
+
+
+    private void uploadPicture(){
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + ".jpg";
+        System.out.println("확인해보기 2.5 "+imageFileName);
+
+        File fileToUpload = new File(mCurrentPhotoPath);
+
+        String testPath = "/storage/emulated/0/DCIM/Screenshots/20200806_113923.jpg";
+
+//        File fileToUpload = new File(testPath);
+        System.out.println("확인해보기 33333333 "+fileToUpload);
+
+        if (fileToUpload == null) {
+            Toast.makeText(this, "Could not find the filepath of  the selected file", Toast.LENGTH_LONG).show();
+
+            System.out.println("존재 하지 않아요!");
+            // to make sure that file is not emapty or null
+            return;
+        }
+        if (fileToUpload != null){
+            Toast.makeText(this, "Could find the filepath of  the selected file", Toast.LENGTH_LONG).show();
+            System.out.println("존재 해요!");
+        }
+
+        //rekogntion 이 아니라 rekognition 이다! 멍청아! 나중에 만들때는 s3 버킷 이름을 고쳐서 완성하자
+        TransferObserver observer = transferUtility.upload(
+                "android-rekogntion", /* 업로드 할 버킷 이름 */
+                imageFileName, /* 버킷에 저장할 파일의 이름 */
+                fileToUpload /* 버킷에 저장할 파일 */
+        );
+
+        transferObserverListener(observer);
+
+
+    }
+
+    public void transferObserverListener(TransferObserver transferObserver){
+        transferObserver.setTransferListener(new TransferListener(){
+            @Override
+            public void onStateChanged(int id, TransferState state) {
+                Toast.makeText(getApplicationContext(), "State Change" + state,
+                        Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                int percentage = (int) (bytesCurrent/bytesTotal * 100);
+                Toast.makeText(getApplicationContext(), "Progress in %" + percentage,
+                        Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onError(int id, Exception ex) {
+                Log.e("error","error");
+            }
+        });
     }
 
     // 카메라로 촬영한 이미지를 가져오는 부분
